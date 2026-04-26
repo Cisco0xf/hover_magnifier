@@ -2,7 +2,9 @@
 
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hover_magnifier/utils/enums.dart';
 import 'package:hover_magnifier/utils/magnifier_decoration.dart';
 import 'package:hover_magnifier/utils/my_logger.dart';
 
@@ -14,8 +16,14 @@ class HoverMagnifier extends StatefulWidget {
     this.magnifierOffset = Offset.zero,
     required this.scale,
     required this.width,
+    this.enabled = true,
     this.decoration = const OverlayDecoration(),
+    //this.overlayDirection = OverlayDirection.right,
+    this.overlayPosition = OverlayPosition.stayAround,
   });
+
+  /// TODO : Do not forget to add assetsion for the BoxShape.cirle & the borderRaduis
+  /// CUZ it damage the screen
 
   final Widget child;
   final double scale;
@@ -23,6 +31,11 @@ class HoverMagnifier extends StatefulWidget {
   final double width;
   final Offset magnifierOffset;
   final OverlayDecoration decoration;
+
+  final OverlayPosition overlayPosition;
+
+  final bool enabled;
+  // final OverlayDirection overlayDirection;
 
   @override
   State<HoverMagnifier> createState() => _HoverMagnifierState();
@@ -43,6 +56,10 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
 
   OverlayDecoration get _decoration => widget.decoration;
 
+  bool get stayBehind => widget.overlayPosition == OverlayPosition.stayAround;
+
+  // bool get _left => widget.overlayDirection == OverlayDirection.right;
+
   /// Main Key that will be used to get the size & offset of the target widget
 
   final GlobalKey _key = GlobalKey();
@@ -60,6 +77,15 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
       borderRadius: _decoration.borderRadius ?? BorderRadius.zero,
       child: child,
     );
+  }
+
+  // Glass Properties
+
+  double get _glassSigma {
+    if (!_decoration.appyGlassEffect) {
+      return 0.0;
+    }
+    return _decoration.glassSigmaXY;
   }
 
   OverlayEntry _buildHoverMgnifierEntry() {
@@ -83,24 +109,42 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         final Size widgetSize = box.size;
 
         /// Takes the position of the mouse from the global and tells me where it is in the widget
-        final Offset localePos = box.globalToLocal(Offset(dx, dy));
 
         // Catch the offsetX & offsetY for the translate
 
-        final double offsetX = -localePos.dx * _scale + _width / 2;
-        final double offsetY = -localePos.dy * _scale + _height / 2;
+        final double offsetX =
+            localePos.dx * _scale + widgetSize.width / 2 /*  _width / 2 */;
+        final double offsetY =
+            localePos.dy * _scale + widgetSize.height / 2 /* _height / 2 */;
+
+        /* Log.log(
+          "Offset X => ${offsetX.round()} | Width of the Overlay => ${_width.round()}",
+        );
+        Log.log(
+          "Offset Y => ${offsetY.round()} | Height of the Overlay => ${_height.round()}",
+        ); */
 
         // Calcualte the left & top values for the overlay
 
         final Offset globalPos = box.localToGlobal(Offset.zero);
 
-        double left = globalPos.dx + widgetSize.width + _offset.dx;
+        // Get the Position of the overlay in the screen
 
-        double top = globalPos.dy; // I do not want it to move on the y-axis
+       
+
+        if (top < 0 || _height > _screenHeight) {
+          top = 0;
+        }
+
+        if (top + _height > _screenHeight) {
+          top = dy - _height;
+        }
 
         return Positioned(
           top: top,
-          left: left,
+          left: horizontal,
+          /*  left: _left ? horizontal : null,
+          right: _left ? null : horizontal, */
           width: _width,
           height: _height,
           child: IgnorePointer(
@@ -108,7 +152,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
               color: Colors.transparent,
               child: _buildShape(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+                  filter: ImageFilter.blur(
+                      sigmaX: _glassSigma, sigmaY: _glassSigma),
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: _decoration.borderRadius,
@@ -125,7 +170,6 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
                         maxHeight: double.infinity,
                         maxWidth: double.infinity,
                         child: Transform.translate(
-                          offset: Offset(offsetX, offsetY),
                           child: Transform.scale(
                             scale: _scale,
                             alignment: Alignment.topLeft,
@@ -148,6 +192,11 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
     );
   }
 
+  ///
+  bool get _isMobile =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
   /// [HoverMagnifier] Controllers
 
   void _showOverlay() {
@@ -167,9 +216,25 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
   Widget build(BuildContext context) {
     return MouseRegion(
       key: _key,
-      onEnter: (event) => _showOverlay(),
-      onExit: (event) => _hideOverlay(),
+      onEnter: (event) {
+        if (!widget.enabled || _isMobile) {
+          return;
+        }
+
+        _showOverlay();
+      },
+      onExit: (event) {
+        if (!widget.enabled || _isMobile) {
+          return;
+        }
+
+        _hideOverlay();
+      },
       onHover: (event) {
+        if (!widget.enabled || _isMobile) {
+          return;
+        }
+
         setState(() {
           dx = event.position.dx;
           dy = event.position.dy;
