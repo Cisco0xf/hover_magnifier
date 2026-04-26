@@ -1,7 +1,5 @@
 library hover_magnifier;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export "src/hover_magnifier.dart";
+export "utils/enums.dart";
+export "utils/magnifier_decoration.dart";
