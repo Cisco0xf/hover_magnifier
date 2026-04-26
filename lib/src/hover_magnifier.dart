@@ -1,6 +1,9 @@
-import 'package:flutter/foundation.dart';
+// ignore_for_file: avoid_unnecessary_containers
+
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:hover_magnifier/utils/magnifier_decoration.dart';
 import 'package:hover_magnifier/utils/my_logger.dart';
 
 class HoverMagnifier extends StatefulWidget {
@@ -8,9 +11,10 @@ class HoverMagnifier extends StatefulWidget {
     super.key,
     required this.child,
     required this.height,
-    required this.magnifierOffset,
+    this.magnifierOffset = Offset.zero,
     required this.scale,
     required this.width,
+    this.decoration = const OverlayDecoration(),
   });
 
   final Widget child;
@@ -18,6 +22,7 @@ class HoverMagnifier extends StatefulWidget {
   final double height;
   final double width;
   final Offset magnifierOffset;
+  final OverlayDecoration decoration;
 
   @override
   State<HoverMagnifier> createState() => _HoverMagnifierState();
@@ -36,6 +41,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
   double get _height => widget.height;
   Offset get _offset => widget.magnifierOffset;
 
+  OverlayDecoration get _decoration => widget.decoration;
+
   /// Main Key that will be used to get the size & offset of the target widget
 
   final GlobalKey _key = GlobalKey();
@@ -43,6 +50,17 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
   /// [HoverMagnifier] OverlayEntry builder
 
   OverlayEntry? _hoverOverlay;
+
+  Widget _buildShape({required Widget child}) {
+    if (_decoration.shape == BoxShape.circle) {
+      return ClipOval(child: child);
+    }
+
+    return ClipRRect(
+      borderRadius: _decoration.borderRadius ?? BorderRadius.zero,
+      child: child,
+    );
+  }
 
   OverlayEntry _buildHoverMgnifierEntry() {
     return OverlayEntry(
@@ -62,13 +80,15 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         ///
         /// Get the Size of the target widget (width & height)
 
+        final Size widgetSize = box.size;
+
         /// Takes the position of the mouse from the global and tells me where it is in the widget
         final Offset localePos = box.globalToLocal(Offset(dx, dy));
 
         // Catch the offsetX & offsetY for the translate
 
-        final double offsetX = localePos.dx * _scale + _width / 2;
-        final double offsetY = localePos.dy * _scale + _height / 2;
+        final double offsetX = -localePos.dx * _scale + _width / 2;
+        final double offsetY = -localePos.dy * _scale + _height / 2;
 
         // Calcualte the left & top values for the overlay
 
@@ -78,34 +98,43 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
 
         double top = globalPos.dy; // I do not want it to move on the y-axis
 
-       
-
         return Positioned(
           top: top,
           left: left,
           width: _width,
           height: _height,
-          child: Material(
-            elevation: 8,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10.0),
-                child: ClipRect(
-                  child: OverflowBox(
-                    minHeight: 0.0,
-                    minWidth: 0.0,
-                    maxHeight: double.infinity,
-                    maxWidth: double.infinity,
-                    child: Transform.translate(
-                      offset: Offset(offsetX, offsetY),
-                      child: Transform.scale(
-                        scale: _scale,
-                        alignment: Alignment.topLeft,
-                        child: SizedBox(
-                          width: widgetSize.width,
-                          height: widgetSize.height,
-                          child: widget.child,
+          child: IgnorePointer(
+            child: Material(
+              color: Colors.transparent,
+              child: _buildShape(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: _decoration.borderRadius,
+                      border: _decoration.border,
+                      color: _decoration.backgroundColor,
+                      boxShadow: _decoration.boxShadow,
+                      gradient: _decoration.gradient,
+                      shape: _decoration.shape,
+                    ),
+                    child: _buildShape(
+                      child: OverflowBox(
+                        minHeight: 0.0,
+                        minWidth: 0.0,
+                        maxHeight: double.infinity,
+                        maxWidth: double.infinity,
+                        child: Transform.translate(
+                          offset: Offset(offsetX, offsetY),
+                          child: Transform.scale(
+                            scale: _scale,
+                            alignment: Alignment.topLeft,
+                            child: SizedBox(
+                              width: widgetSize.width,
+                              height: widgetSize.height,
+                              child: widget.child,
+                            ),
+                          ),
                         ),
                       ),
                     ),
