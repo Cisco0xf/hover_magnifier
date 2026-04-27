@@ -1,7 +1,19 @@
 name: hover_magnifier
-description: "A new Flutter package project."
+description: "A Flutter package that replicates Amazon/Noon-style product hover zoom. Displays a floating magnifier overlay on mouse hover, panning with cursor movement. Built for Flutter web and desktop."
 version: 0.0.1
-homepage:
+
+homepage: https://github.com/Cisco0xf/hover_magnifier.git
+repository: https://github.com/Cisco0xf/hover_magnifier.git
+issue_tracker: https://github.com/Cisco0xf/hover_magnifier/issues
+
+
+topics: [magnifier, hover, product-zoom, image-zoom, flutter-web]
+  
+platforms:
+  web:
+  windows:
+  macos:
+  linux:
 
 environment:
   sdk: ^3.5.4
