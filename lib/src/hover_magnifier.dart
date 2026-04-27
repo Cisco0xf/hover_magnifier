@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_unnecessary_containers
 
+import 'dart:developer';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:hover_magnifier/utils/assertion_msg.dart';
 import 'package:hover_magnifier/utils/enums.dart';
 import 'package:hover_magnifier/utils/overlay_decoration.dart';
-import 'package:hover_magnifier/utils/my_logger.dart';
 
 class HoverMagnifier extends StatefulWidget {
   /// I have built this package to simulate the Amazon & Noon product zooming effect.
@@ -113,11 +113,26 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
   double get _screenWidth => MediaQuery.sizeOf(context).width;
   double get _screenHeight => MediaQuery.sizeOf(context).height;
 
-  /// Access the properties of the [HoverMagnifier]
+  /// Access the properties of the [HoverMagnifier] widget
 
-  
+  double get _scale => widget.scale;
+  double get _width => widget.width;
+  double get _height => widget.height;
+  Offset get _offset => widget.magnifierOffset;
+  OverlayDecoration get _decoration => widget.decoration;
 
-  OverlayEntry? _hoverOverlay;
+  /// Check [OverlayPosition.stayAround] to use it to perform the position implementation
+
+  bool get _stayBehind => widget.overlayPosition == OverlayPosition.stayAround;
+
+  /// This [GlobalKey] will be passed to the [MouseRegion] to extract
+  /// [Size] & [Offset] to use it in the OverlayEntry that will show the
+  /// magnifier effect
+
+  final GlobalKey _key = GlobalKey();
+
+  /// Build [BoxShape] layout wrapper for both the shape of [HoverMagnifier]
+  /// and the glass effect as well
 
   Widget _buildShape({required Widget child}) {
     if (_decoration.shape == BoxShape.circle) {
@@ -130,68 +145,93 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
     );
   }
 
-  // Glass Properties
+  //// Perform glass effect if [_decoration.applyGlassEffect] is `true`
 
   double get _glassSigma {
-    if (!_decoration.appyGlassEffect) {
+    if (!_decoration.applyGlassEffect) {
       return 0.0;
     }
     return _decoration.glassSigmaXY;
   }
 
+  /// Build the body of the [HoverMagnifier]
+
+  OverlayEntry? _hoverOverlay;
+
   OverlayEntry _buildHoverMgnifierEntry() {
     return OverlayEntry(
       builder: (context) {
-        // Get the [RenderBox] from the key of the MaouseRegion
+        /// Get the RenderBox that will be used to extract the Offset & Size of the
+        /// original widget, use it in the zoomed one
 
         final RenderBox? box =
             _key.currentContext?.findRenderObject() as RenderBox?;
 
         if (box == null) {
-          Log.error("RenderBox Gives null value");
+          log(RENDER, name: "HoverMagnifier");
 
           return const SizedBox.shrink();
         }
 
-        /// Get the Propeties from the RenderBox
-        ///
         /// Get the Size of the target widget (width & height)
 
         final Size widgetSize = box.size;
 
         /// Takes the position of the mouse from the global and tells me where it is in the widget
+        ///
+        /// Since `dy` & `dx` are updated from the cursor movement
+
         final Offset localePos = box.globalToLocal(Offset(dx, dy));
 
-        // Catch the offsetX & offsetY for the translate
+        /// Catch the offsetX & offsetY for the translate
+        ///
+        /// The value of the [localePos] is always (+), since it starts from [Offset.zero]
+        /// then increase on `dx` on the x-axis & `dy` on the y-axis
+        ///
+        /// If the mouse cursor moves to the left the content of the viewport moves to the right, vise versa
+        /// so I must muliply the value with negative to perfrom the moving of the mouse
+        /// shifts the scaled widget so exactly the pixel under your cursor ends up centered in the overlay.
+        ///
+        /// About this value [ widgetSize.width / 2] the purpose of it is to set the view in the
+        /// center of the mouse cursor instead of being at the edge of the original view
 
         final double offsetX = -localePos.dx * _scale + widgetSize.width / 2;
         final double offsetY = -localePos.dy * _scale + widgetSize.height / 2;
 
-        // Calcualte the left & top values for the overlay
+        /// I give it the Offset.zero which is the top-left of the widget then it returns
+        /// where is this widget in the global(screen)
 
         final Offset globalPos = box.localToGlobal(Offset.zero);
 
         // Get the Position of the overlay in the screen
 
-        double horizontal = 0.0;
+        double left = 0.0;
         double top = 0.0;
 
         if (_stayBehind) {
-          horizontal = globalPos.dx + widgetSize.width + _offset.dx;
+          left = globalPos.dx + widgetSize.width + _offset.dx;
 
-          // I do not want it to move on the y-axis
+          /// I do not want it to move on the y-axis unless there is not space, it will move
+
           top = globalPos.dy;
         } else {
-          horizontal = dx + _offset.dx /* - _width / 2 */;
+          /// Simply, will follow the mouse with the given Offset
+
+          left = dx + _offset.dx /* - _width / 2 */;
           top = dy + _offset.dy /* - _height / 2 */;
         }
 
-        if (horizontal + _width > _screenWidth) {
-          /// horizontal = dx - _width - _offset.dx;
-          /// horizontal = globalPos.dx - (_width / 2) - (_offset.dx / 2);
-          horizontal = globalPos.dx - _width - _offset.dx;
+        /// This condition to handle if the widget in the max right of the screen
 
-          horizontal = horizontal.clamp(0.0, _screenWidth - _width);
+        if (left + _width > _screenWidth) {
+          /// I will get where the widget top-left position exist in the screen
+          /// then substract the width of the widget and the horizontal space
+
+          left = globalPos.dx - _width - _offset.dx;
+
+          /// Make sure that the `left` value will be always between the
+
+          left = left.clamp(0.0, _screenWidth - _width);
         }
 
         if (top < 0 || _height > _screenHeight) {
@@ -205,9 +245,7 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         return AnimatedPositioned(
           duration: widget.followMouseDuration,
           top: top,
-          left: horizontal,
-          /*  left: _left ? horizontal : null,
-          right: _left ? null : horizontal, */
+          left: left,
           width: _width,
           height: _height,
           child: IgnorePointer(
@@ -216,7 +254,9 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
               child: _buildShape(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(
-                      sigmaX: _glassSigma, sigmaY: _glassSigma),
+                    sigmaX: _glassSigma,
+                    sigmaY: _glassSigma,
+                  ),
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: _decoration.borderRadius,
@@ -256,7 +296,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
     );
   }
 
-  ///
+  /// Check if the platform is mobile so it will diable the [HoverMagnifier]
+
   bool get _isMobile =>
       defaultTargetPlatform == TargetPlatform.android ||
       defaultTargetPlatform == TargetPlatform.iOS;
@@ -273,6 +314,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
     _hoverOverlay = null;
   }
 
+  /// Mouse position in the screen will be updated by these values
+
   double dx = 0.0;
   double dy = 0.0;
 
@@ -281,6 +324,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
     return MouseRegion(
       key: _key,
       onEnter: (event) {
+        /// Show the magnifier overlay when mouse enters the widget,
+        /// unless disabled or on mobile platform
         if (!widget.enabled || _isMobile) {
           return;
         }
@@ -288,6 +333,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         _showOverlay();
       },
       onExit: (event) {
+        /// Hide the magnifier overlay when mouse leaves the widget,
+        /// unless disabled or on mobile platform
         if (!widget.enabled || _isMobile) {
           return;
         }
@@ -295,6 +342,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         _hideOverlay();
       },
       onHover: (event) {
+        /// Update magnifier position to follow cursor movement,
+        /// unless disabled or on mobile platform
         if (!widget.enabled || _isMobile) {
           return;
         }
@@ -304,6 +353,7 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
           dy = event.position.dy;
         });
 
+        /// Rebuild the overlay to reflect the new cursor position
         _hoverOverlay?.markNeedsBuild();
       },
       child: widget.child,
