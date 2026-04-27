@@ -58,7 +58,7 @@ Container(
 > If you got any compile time error, please check the full example.
 
 ### Example-1:
-![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/gif/mgnifier_1.gif)
+![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/optimized_gif/1.gif)
 ```dart
 Container(
   decoration: BoxDecoration(
@@ -89,11 +89,11 @@ Container(
   ),
 ),
 ```
-![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/gif/magnifier_3.gif)
+![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/optimized_gif/2.gif)
 
 ---------
 ### Example-2:
-![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/gif/magnifier_4.gif)
+![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/optimized_gif/3.gif)
 ```dart
 Container(
   padding: const EdgeInsets.all(10.0),
@@ -120,7 +120,7 @@ Container(
 ```
 ---------
 ### Example-3:
-![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/gif/magnifier_5.gif)
+![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/optimized_gif/4.gif)
 ```dart
 SizedBox(
   height: screenHeight * .7,
@@ -147,7 +147,7 @@ SizedBox(
 
 ---------
 ### Example-4:
-![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/gif/magnifier_2.gif)
+![hover_magnifier demo](https://raw.githubusercontent.com/Cisco0xf/hover_magnifier/main/example/assets/optimized_gif/5.gif)
 ```dart
 Container(
   decoration: BoxDecoration(
