@@ -10,3 +10,9 @@
 ## 0.0.2
 
 * README improvements
+
+## 0.0.3
+
+* README improvements
+* Fix pub.dev REAME file 
+* Improve pubspec.yaml
