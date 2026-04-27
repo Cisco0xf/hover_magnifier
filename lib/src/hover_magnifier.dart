@@ -4,12 +4,17 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hover_magnifier/utils/assertion_msg.dart';
 import 'package:hover_magnifier/utils/enums.dart';
-import 'package:hover_magnifier/utils/magnifier_decoration.dart';
+import 'package:hover_magnifier/utils/overlay_decoration.dart';
 import 'package:hover_magnifier/utils/my_logger.dart';
 
 class HoverMagnifier extends StatefulWidget {
-  const HoverMagnifier({
+  /// I have built this package to simulate the Amazon & Noon product zooming effect.
+  ///
+  /// It is for `web` & `desktop` only. NOT available for mobile.
+
+  HoverMagnifier({
     super.key,
     required this.child,
     required this.height,
@@ -18,53 +23,99 @@ class HoverMagnifier extends StatefulWidget {
     required this.width,
     this.enabled = true,
     this.decoration = const OverlayDecoration(),
-    //this.overlayDirection = OverlayDirection.right,
     this.overlayPosition = OverlayPosition.stayAround,
-  });
+    this.followMouseDuration = Duration.zero,
+  })  : assert(
+          !(decoration.shape == BoxShape.circle &&
+              decoration.borderRadius != null),
+          SHAPE_ASSERT,
+        ),
+        assert(width >= 0.0 && height >= 0.0, SIZE_ASSERT),
+        assert(scale >= 0.0, SCALE_ASSERT);
 
-  /// TODO : Do not forget to add assetsion for the BoxShape.cirle & the borderRaduis
-  /// CUZ it damage the screen
+  /// The widget that [HoverMagnifier] will magnify when hovering over it.
+  ///
+  /// This widget will be displayed at the original scale in the target area,
+  /// and at the magnified scale in the magnifier overlay.
+  ///
+  /// Cannot be null. It is recommended to wrap this child with a [SizedBox]
+  /// or [Size] widget specifying explicit `width` and `height` for optimal results.
 
   final Widget child;
+
+  /// The scale of the zoomed child
+
   final double scale;
+
+  /// Height of the [HoverMagnifier]
+  ///
+  /// If the [BoxShape] argument is [BoxShape.circle], `width` & `height` MUST be the same
+
   final double height;
+
+  /// Width of the [HoverMagnifier]
+  ///
+  /// If the [BoxShape] argument is [BoxShape.circle], `width` & `height` MUST be the same
+
   final double width;
+
+  /// The offset of the magnifier window from the mouse cursor position.
+  ///
+  /// Controls how many pixels away from the cursor the magnifier overlay
+  /// appears. Positive values move it right and down, negative values move it
+  /// left and up.
+  ///
+  /// Defaults to [Offset.zero], positioning the magnifier at the cursor.
   final Offset magnifierOffset;
+
+  /// Decoration configuration for the magnifier overlay appearance.
+  ///
+  /// Defines the visual styling of the magnifier window including background,
+  /// border, shape, and effects. Note that [borderRadius] must be null when
+  /// [shape] is [BoxShape.circle] to maintain proper circular clipping.
+  ///
+  /// Individual properties (color, image, border, shadow, gradient) are optional
+  /// and only applied if provided.
   final OverlayDecoration decoration;
+
+  /// Controls where the magnifier overlay appears relative to the target widget.
+  ///
+  /// * [OverlayPosition.stayAround] - Positions the magnifier beside the target
+  ///   widget, maintaining a fixed relationship with it.
+  /// * [OverlayPosition.followMouse] - Positions the magnifier to follow the
+  ///   mouse cursor as it moves over the target widget.
 
   final OverlayPosition overlayPosition;
 
+  /// Enables or disables the magnifier effect.
+  ///
+  /// When `false`, hovering over the child widget will not display the magnifier.
+  /// On mobile platforms (`iOS` and Android), this is `false` by default since
+  /// hover effects are not applicable.
+
   final bool enabled;
-  // final OverlayDirection overlayDirection;
+
+  /// Animation duration for magnifier position changes when following the mouse.
+  ///
+  /// When [overlayPosition] is [OverlayPosition.followMouse], this defines how
+  /// smoothly the magnifier animates to new positions. Set to [Duration.zero]
+  /// for instant positioning without animation.
+
+  final Duration followMouseDuration;
 
   @override
   State<HoverMagnifier> createState() => _HoverMagnifierState();
 }
 
 class _HoverMagnifierState extends State<HoverMagnifier> {
-  /// Screen Sizes
+  /// Get `screenWidth` & `screenHeight` from [MediaQuery]
 
   double get _screenWidth => MediaQuery.sizeOf(context).width;
   double get _screenHeight => MediaQuery.sizeOf(context).height;
 
-  /// Properties
+  /// Access the properties of the [HoverMagnifier]
 
-  double get _scale => widget.scale;
-  double get _width => widget.width;
-  double get _height => widget.height;
-  Offset get _offset => widget.magnifierOffset;
-
-  OverlayDecoration get _decoration => widget.decoration;
-
-  bool get stayBehind => widget.overlayPosition == OverlayPosition.stayAround;
-
-  // bool get _left => widget.overlayDirection == OverlayDirection.right;
-
-  /// Main Key that will be used to get the size & offset of the target widget
-
-  final GlobalKey _key = GlobalKey();
-
-  /// [HoverMagnifier] OverlayEntry builder
+  
 
   OverlayEntry? _hoverOverlay;
 
@@ -109,20 +160,12 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
         final Size widgetSize = box.size;
 
         /// Takes the position of the mouse from the global and tells me where it is in the widget
+        final Offset localePos = box.globalToLocal(Offset(dx, dy));
 
         // Catch the offsetX & offsetY for the translate
 
-        final double offsetX =
-            localePos.dx * _scale + widgetSize.width / 2 /*  _width / 2 */;
-        final double offsetY =
-            localePos.dy * _scale + widgetSize.height / 2 /* _height / 2 */;
-
-        /* Log.log(
-          "Offset X => ${offsetX.round()} | Width of the Overlay => ${_width.round()}",
-        );
-        Log.log(
-          "Offset Y => ${offsetY.round()} | Height of the Overlay => ${_height.round()}",
-        ); */
+        final double offsetX = -localePos.dx * _scale + widgetSize.width / 2;
+        final double offsetY = -localePos.dy * _scale + widgetSize.height / 2;
 
         // Calcualte the left & top values for the overlay
 
@@ -130,7 +173,26 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
 
         // Get the Position of the overlay in the screen
 
-       
+        double horizontal = 0.0;
+        double top = 0.0;
+
+        if (_stayBehind) {
+          horizontal = globalPos.dx + widgetSize.width + _offset.dx;
+
+          // I do not want it to move on the y-axis
+          top = globalPos.dy;
+        } else {
+          horizontal = dx + _offset.dx /* - _width / 2 */;
+          top = dy + _offset.dy /* - _height / 2 */;
+        }
+
+        if (horizontal + _width > _screenWidth) {
+          /// horizontal = dx - _width - _offset.dx;
+          /// horizontal = globalPos.dx - (_width / 2) - (_offset.dx / 2);
+          horizontal = globalPos.dx - _width - _offset.dx;
+
+          horizontal = horizontal.clamp(0.0, _screenWidth - _width);
+        }
 
         if (top < 0 || _height > _screenHeight) {
           top = 0;
@@ -140,7 +202,8 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
           top = dy - _height;
         }
 
-        return Positioned(
+        return AnimatedPositioned(
+          duration: widget.followMouseDuration,
           top: top,
           left: horizontal,
           /*  left: _left ? horizontal : null,
@@ -170,6 +233,7 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
                         maxHeight: double.infinity,
                         maxWidth: double.infinity,
                         child: Transform.translate(
+                          offset: Offset(offsetX, offsetY),
                           child: Transform.scale(
                             scale: _scale,
                             alignment: Alignment.topLeft,
