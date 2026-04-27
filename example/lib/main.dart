@@ -105,6 +105,7 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
   bool followMouse2 = true;
   bool isCircle2 = true;
   double scale2 = 2.0;
+  int duration2 = 0;
 
   bool followMouse3 = false;
   bool isCircle3 = false;
@@ -113,11 +114,22 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
   bool followMouse4 = false;
   bool isCircle4 = false;
   double scale4 = 2.0;
+  int duration4 = 0;
 
   BoxShape _shape(bool chacker) =>
       chacker ? BoxShape.circle : BoxShape.rectangle;
   OverlayPosition _position(bool checker) =>
       checker ? OverlayPosition.followMouse : OverlayPosition.stayAround;
+
+  // PageController
+
+  int currentPage = 0;
+
+  void _updateCurrentPage(int page) {
+    setState(() {
+      currentPage = page;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,41 +154,77 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
                   child: SizedBox(
                     width: screenWidth * 0.36,
                     height: screenHeight * .75,
-                    child: PageView.builder(
-                      itemCount: images.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            borderRadius: borderRadius(10.0, false),
-                            color: ExColors.surface,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: PageView(
+                            onPageChanged: (value) => _updateCurrentPage(value),
+                            children: [
+                              for (int index = 0;
+                                  index < images.length;
+                                  index++)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: borderRadius(10.0, false),
+                                    color: ExColors.surface,
+                                  ),
+                                  width: screenWidth * 0.35,
+                                  height: screenHeight * .75,
+                                  child: HoverMagnifier(
+                                    width:
+                                        isCircle1 || followMouse1 ? 250 : 400,
+                                    height:
+                                        isCircle1 || followMouse1 ? 250.0 : 500,
+                                    magnifierOffset: const Offset(20.0, 0.0),
+                                    scale: scale1,
+                                    overlayPosition: _position(followMouse1),
+                                    decoration: OverlayDecoration(
+                                      shape: /* BoxShape.circle */
+                                          _shape(isCircle1),
+                                      backgroundColor:
+                                          ExColors.surface.withOpacity(0.2),
+                                      border: Border.all(
+                                          color: ExColors.primary, width: 3.0),
+                                      borderRadius: /* BorderRadius.circular(
+                                        10)  */
+                                          borderRadius(10.0, isCircle1),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: borderRadius(10.0, false) ??
+                                          BorderRadius.zero,
+                                      child: AvifImage.asset(
+                                        images[index],
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                            ],
                           ),
-                          width: screenWidth * 0.35,
-                          height: screenHeight * .75,
-                          child: HoverMagnifier(
-                            width: isCircle1 ? 250 : 400,
-                            height: isCircle1 ? 250.0 : 500,
-                            magnifierOffset: const Offset(20.0, 0.0),
-                            scale: scale1,
-                            overlayPosition: _position(followMouse1),
-                            decoration: OverlayDecoration(
-                              shape: _shape(isCircle1),
-                              backgroundColor:
-                                  ExColors.surface.withOpacity(0.2),
-                              border: Border.all(
-                                  color: ExColors.primary, width: 3.0),
-                              borderRadius: borderRadius(10.0, isCircle1),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: borderRadius(10.0, false) ??
-                                  BorderRadius.zero,
-                              child: AvifImage.asset(
-                                images[index],
-                                fit: BoxFit.cover,
-                              ),
+                        ),
+                        Positioned(
+                          bottom: 30.0,
+                          right: 30.0,
+                          child: Row(
+                            children: List<Widget>.generate(
+                              images.length,
+                              (index) {
+                                return Container(
+                                  width: 30.0,
+                                  height: 3.0,
+                                  margin: const EdgeInsets.all(5.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.0),
+                                    color: index == currentPage
+                                        ? ExColors.primary
+                                        : Colors.white,
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -187,6 +235,9 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
                   onShapeChanged: (p0) => setState(() => isCircle2 = p0),
                   onScaleChanged: (value) => setState(() => scale2 = value),
                   scale: scale2,
+                  duration: duration2,
+                  onDurationChanged: (value) =>
+                      setState(() => duration2 = value),
                   child: Container(
                     padding: const EdgeInsets.all(10.0),
                     width: screenWidth * .5,
@@ -196,11 +247,12 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
                       width: 200.0,
                       scale: scale2,
                       overlayPosition: _position(followMouse2),
+                      followMouseDuration: Duration(milliseconds: duration2),
                       decoration: OverlayDecoration(
                         backgroundColor: ExColors.surface.withOpacity(0.2),
                         shape: _shape(isCircle2),
                         borderRadius: borderRadius(10, isCircle2),
-                        border: Border.all(color: ExColors.primary),
+                        border: Border.all(color: ExColors.primary, width: 2.0),
                       ),
                       child: const Text(
                         textEx,
@@ -251,6 +303,10 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
                   onShapeChanged: (p0) => setState(() => isCircle4 = p0),
                   onScaleChanged: (value) => setState(() => scale4 = value),
                   scale: scale4,
+                  duration: duration4,
+                  onDurationChanged: (value) {
+                    setState(() => duration4 = value);
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: borderRadius(10.0, false),
@@ -263,7 +319,8 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
                       width: isCircle4 ? 400 : 500,
                       scale: scale4,
                       overlayPosition: _position(followMouse4),
-                      magnifierOffset: const Offset(30.0, 0.0),
+                      magnifierOffset: const Offset(20.0, 0.0),
+                      followMouseDuration: Duration(milliseconds: duration4),
                       decoration: OverlayDecoration(
                         backgroundColor: ExColors.surface.withOpacity(0.2),
                         border: Border.all(color: ExColors.primary),
@@ -343,6 +400,8 @@ class FullMagnifier extends StatelessWidget {
     required this.child,
     required this.onScaleChanged,
     required this.scale,
+    this.duration,
+    this.onDurationChanged,
   });
 
   final void Function(bool) onMouseChanged;
@@ -354,6 +413,9 @@ class FullMagnifier extends StatelessWidget {
 
   final double scale;
   final void Function(double value) onScaleChanged;
+
+  final int? duration;
+  final void Function(int value)? onDurationChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -389,24 +451,49 @@ class FullMagnifier extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10.0),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Text(
-              "Scale: ${scale.toStringAsFixed(2)}",
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Scale: ${scale.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Slider(
+                  value: scale,
+                  onChanged: onScaleChanged,
+                  min: 1.0,
+                  max: 4.0,
+                ),
+              ],
+            ),
+            if (duration != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Duration: $duration",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Slider(
+                    value: duration!.toDouble(),
+                    onChanged: (value) {
+                      onDurationChanged!.call(value.toInt());
+                    },
+                    min: 0.0,
+                    max: 100.0,
+                  ),
+                ],
               ),
-            ),
-            Slider(
-              value: scale,
-              onChanged: onScaleChanged,
-              min: 1.0,
-              max: 4.0,
-            ),
           ],
-        )
+        ),
       ],
     );
   }
