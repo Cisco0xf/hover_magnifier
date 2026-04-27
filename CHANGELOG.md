@@ -6,3 +6,7 @@
 * Smart edge detection
 * Glass effect support
 * Fully customizable decoration
+
+## 0.0.2
+
+* README improvements
