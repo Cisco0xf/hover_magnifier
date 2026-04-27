@@ -1,3 +1,8 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+* Initial release
+* Amazon/Noon style hover zoom for Flutter web and desktop
+* Two positioning modes: stayAround and followMouse
+* Smart edge detection
+* Glass effect support
+* Fully customizable decoration
