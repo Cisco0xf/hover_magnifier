@@ -228,20 +228,24 @@ class _HoverMagnifierState extends State<HoverMagnifier> {
           /// then substract the width of the widget and the horizontal space
 
           left = globalPos.dx - _width - _offset.dx;
-
-          /// Make sure that the `left` value will be always between the
-
-          left = left.clamp(0.0, _screenWidth - _width);
         }
 
-        if (top < 0 || _height > _screenHeight) {
+        /* if (top < 0 || _height > _screenHeight) {
           top = 0;
         }
 
         if (top + _height > _screenHeight) {
           top = dy - _height;
-        }
+        } */
 
+        /// Make sure that the `top` value will be always between the screen boundaries
+
+        top = top.clamp(0.0, _screenHeight - _height);
+
+        /// Make sure that the `left` value will be always between the screen boundaries
+
+        left = left.clamp(0.0, _screenWidth - _width);
+        
         return AnimatedPositioned(
           duration: widget.followMouseDuration,
           top: top,

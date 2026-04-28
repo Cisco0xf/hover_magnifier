@@ -16,3 +16,7 @@
 * README improvements
 * Fix pub.dev REAME file 
 * Improve pubspec.yaml
+
+## 0.0.4
+
+* Fix a bug in a scollable viewport the magnifier scape moves on the dy & escap the screen boundaries

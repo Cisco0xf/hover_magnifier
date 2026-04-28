@@ -1,6 +1,6 @@
 name: hover_magnifier
 description: "Hover magnifier for Flutter web & desktop. Amazon style product zoom with edge detection and glass effect."
-version: 0.0.3
+version: 0.0.4
 
 homepage: https://github.com/Cisco0xf/hover_magnifier
 repository: https://github.com/Cisco0xf/hover_magnifier
