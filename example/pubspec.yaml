@@ -31,14 +31,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  hover_magnifier:
-    path: ../
+  #hover_magnifier:
+  #  path: ../
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_avif: ^3.1.0
+  hover_magnifier: ^0.0.3
 
 dev_dependencies:
   flutter_test:

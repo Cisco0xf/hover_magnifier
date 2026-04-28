@@ -94,9 +94,9 @@ class _HoverMagnifierExampleState extends State<HoverMagnifierExample>
     Assets.image1,
     Assets.image3,
     Assets.image4,
-    Assets.image5,
     Assets.image6,
   ];
+
 
   bool followMouse1 = false;
   bool isCircle1 = false;

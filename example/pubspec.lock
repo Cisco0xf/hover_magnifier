@@ -211,10 +211,11 @@ packages:
   hover_magnifier:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
-    version: "0.0.1"
+      name: hover_magnifier
+      sha256: c1dd528b6d1e7cb89b1ceed448bd52564ccd27eff5e857e6bcca4fa81daf03e8
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   http:
     dependency: transitive
     description:
